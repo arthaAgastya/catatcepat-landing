@@ -1,0 +1,26 @@
+name: Deploy Landing Page
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          # Mengubah Base64 kembali menjadi file kunci yang sempurna
+          echo "${{ secrets.SSH_PRIVATE_KEY_BASE64 }}" | base64 -d > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # Menambahkan server ke daftar yang dikenal agar tidak ditanya yes/no
+          ssh-keyscan -H ${{ secrets.REMOTE_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy via RSYNC
+        run: |
+          rsync -avzr --delete ./ root@${{ secrets.REMOTE_HOST }}:/var/www/catatcepat_static/
